@@ -17,9 +17,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global variables
-EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\tshirt_embeddings_df.csv.gz"
-MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\mobilenetv3s_tshirt.keras"
-KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\tshirt_kmeans.joblib"
+EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\efficientnetb0_fashion_embedings_df.csv.gz"
+
+MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion.keras"
+
+KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion_kmeans41.joblib"
 
 # Load embeddings dataframe and perform validation
 def load_embeddings():
@@ -339,7 +341,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 def main() -> None:
     """Start the bot."""
     # Create the Application
-    application = Application.builder().token("your_token").build()
+    application = Application.builder().token("7978191456:AAGk5l4tbNWV1P52qPCks2xpwykODsjn3DI").build()
     
     # Load data and models
     print("Initializing bot...")
