@@ -6,8 +6,8 @@ import random
 import gzip
 import joblib
 from io import BytesIO
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 import tensorflow as tf
 
 # Enable logging
@@ -16,18 +16,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global variables
-EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\efficientnetb0_fashion_embedings_df.csv.gz"
+# Global variables for T-shirts
+TSHIRT_EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\efficientnetb0_fashion_embedings_df.csv.gz"
+TSHIRT_MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion.keras"
+TSHIRT_KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion_kmeans41.joblib"
 
-MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion.keras"
-
-KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion_kmeans41.joblib"
+# Global variables for Shoes
+SHOES_EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\shoes_embedings_df.csv.gz"
+SHOES_MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_shoes.keras"
+SHOES_KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\shoes_kmeans49.joblib"
 
 # Load embeddings dataframe and perform validation
-def load_embeddings():
-    print("Loading embeddings dataframe...")
+def load_embeddings(embeddings_path):
+    print(f"Loading embeddings dataframe from {embeddings_path}...")
     try:
-        embeddings_df = pd.read_csv(EMBEDDINGS_PATH, compression='gzip')
+        embeddings_df = pd.read_csv(embeddings_path, compression='gzip')
         print(f"Loaded dataframe with shape: {embeddings_df.shape}")
         print(f"Columns: {embeddings_df.columns}")
         
@@ -92,16 +95,16 @@ def load_embeddings():
         return dummy_df, []
 
 # Load models
-def load_models():
-    print("Loading models...")
+def load_models(model_path, kmeans_path):
+    print(f"Loading models from {model_path} and {kmeans_path}...")
     
     # Load the image embedding model
-    model = tf.keras.models.load_model(MODEL_PATH)
+    model = tf.keras.models.load_model(model_path)
     print(f"Model input shape: {model.input_shape}")
     print(f"Model output shape: {model.output_shape}")
     
     # Load the KMeans clustering model
-    kmeans = joblib.load(KMEANS_PATH)
+    kmeans = joblib.load(kmeans_path)
     print(f"KMeans n_clusters: {kmeans.n_clusters}")
     print(f"KMeans feature input dimensionality: {kmeans.cluster_centers_.shape[1]}")
     
@@ -178,16 +181,16 @@ def get_embedding(model, image_tensor):
         print(f"Error in get_embedding: {str(e)}")
         raise
 
-# Find similar t-shirts based on embedding
-def find_similar_tshirts(embedding, kmeans, embeddings_df, embedding_cols, num_results=5):
+# Find similar items based on embedding
+def find_similar_items(embedding, kmeans, embeddings_df, embedding_cols, num_results=5):
     try:
-        print("Finding similar t-shirts...")
+        print("Finding similar items...")
         
         # 1. Get the cluster for the input embedding
         cluster_id = kmeans.predict([embedding])[0]
         print(f"Predicted cluster: {cluster_id}")
         
-        # 2. Get all t-shirts from the same cluster
+        # 2. Get all items from the same cluster
         cluster_items = embeddings_df[embeddings_df['cluster'] == cluster_id]
         print(f"Found {len(cluster_items)} items in the same cluster")
         
@@ -218,38 +221,123 @@ def find_similar_tshirts(embedding, kmeans, embeddings_df, embedding_cols, num_r
         return closest_items[['image_path', 'distance']].values.tolist()
         
     except Exception as e:
-        print(f"Error in find_similar_tshirts: {str(e)}")
-        # Return a random selection of t-shirts as fallback
+        print(f"Error in find_similar_items: {str(e)}")
+        # Return a random selection of items as fallback
         print("Using fallback random selection")
         random_items = embeddings_df.sample(min(num_results, len(embeddings_df)))
-        return random_items['image_path'].tolist()
+        return random_items[['image_path', 'distance' if 'distance' in random_items.columns else 'image_path']].values.tolist()
 
 # Telegram command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
+    
+    # Create a keyboard with category selection
+    keyboard = [
+        [KeyboardButton("T-shirts 👕"), KeyboardButton("Shoes 👟")]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+    
     await update.message.reply_html(
-        f"Hi {user.mention_html()}! I'm the T-shirt Recommendation Bot.\n\n"
-        f"Send me a photo of a T-shirt you like, and I'll recommend similar ones from our catalog!"
+        f"Hi {user.mention_html()}! I'm the Fashion Recommendation Bot.\n\n"
+        f"Choose a category, then send me a photo of an item you like, and I'll recommend similar ones from our catalog!",
+        reply_markup=reply_markup
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
     await update.message.reply_text(
         "Here's how to use this bot:\n\n"
-        "1. Send a photo of a T-shirt you like\n"
-        "2. Wait for me to analyze it\n"
-        "3. I'll send you photos of similar T-shirts from our catalog\n\n"
+        "1. Choose a category (T-shirts or Shoes)\n"
+        "2. Send a photo of the item you like\n"
+        "3. Wait for me to analyze it\n"
+        "4. I'll send you photos of similar items from our catalog\n\n"
         "Available commands:\n"
-        "/start - Start the bot\n"
+        "/start - Start the bot and select a category\n"
+        "/tshirts - Switch to T-shirt mode\n"
+        "/shoes - Switch to Shoes mode\n"
         "/help - Show this help message"
     )
+
+async def set_tshirts_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Switch to T-shirt mode."""
+    context.user_data['mode'] = 'tshirts'
+    await update.message.reply_text(
+        "T-shirt mode activated! 👕\n"
+        "Send me a photo of a T-shirt you like, and I'll recommend similar ones."
+    )
+
+async def set_shoes_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Switch to Shoes mode."""
+    context.user_data['mode'] = 'shoes'
+    await update.message.reply_text(
+        "Shoes mode activated! 👟\n"
+        "Send me a photo of shoes you like, and I'll recommend similar ones."
+    )
+
+async def handle_category_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle category selection from keyboard."""
+    text = update.message.text
+    
+    if text == "T-shirts 👕":
+        context.user_data['mode'] = 'tshirts'
+        await update.message.reply_text(
+            "T-shirt mode activated! 👕\n"
+            "Send me a photo of a T-shirt you like, and I'll recommend similar ones."
+        )
+    elif text == "Shoes 👟":
+        context.user_data['mode'] = 'shoes'
+        await update.message.reply_text(
+            "Shoes mode activated! 👟\n"
+            "Send me a photo of shoes you like, and I'll recommend similar ones."
+        )
+    else:
+        # Create a keyboard with category selection again
+        keyboard = [
+            [KeyboardButton("T-shirts 👕"), KeyboardButton("Shoes 👟")]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        
+        await update.message.reply_text(
+            "Please select a valid category:", 
+            reply_markup=reply_markup
+        )
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Process photos sent by the user."""
     try:
+        # Check if mode is set, default to T-shirts if not
+        mode = context.user_data.get('mode', None)
+        
+        if mode is None:
+            # Ask user to choose a category first
+            keyboard = [
+                [KeyboardButton("T-shirts 👕"), KeyboardButton("Shoes 👟")]
+            ]
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+            
+            await update.message.reply_text(
+                "Please select a category first:", 
+                reply_markup=reply_markup
+            )
+            return
+        
+        # Get the model and data based on selected mode
+        if mode == 'tshirts':
+            model = context.bot_data['tshirt_model']
+            kmeans = context.bot_data['tshirt_kmeans']
+            embeddings_df = context.bot_data['tshirt_embeddings_df']
+            embedding_cols = context.bot_data['tshirt_embedding_cols']
+            item_type = "T-shirt"
+        else:  # shoes mode
+            model = context.bot_data['shoes_model']
+            kmeans = context.bot_data['shoes_kmeans']
+            embeddings_df = context.bot_data['shoes_embeddings_df'] 
+            embedding_cols = context.bot_data['shoes_embedding_cols']
+            item_type = "Shoes"
+        
         # Inform user that processing has started
-        processing_msg = await update.message.reply_text("Processing your T-shirt image... Please wait.")
+        processing_msg = await update.message.reply_text(f"Processing your {item_type} image... Please wait.")
         
         # Get the largest photo available
         photo = update.message.photo[-1]
@@ -268,32 +356,32 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         image_tensor = preprocess_image(photo_bytes_data)
         
         # Get embedding
-        embedding = get_embedding(context.bot_data['model'], image_tensor)
+        embedding = get_embedding(model, image_tensor)
         
-        # Find similar t-shirts
-        similar_tshirts = find_similar_tshirts(
+        # Find similar items
+        similar_items = find_similar_items(
             embedding,
-            context.bot_data['kmeans'],
-            context.bot_data['embeddings_df'],
-            context.bot_data['embedding_cols']
+            kmeans,
+            embeddings_df,
+            embedding_cols
         )
         
         # Update user on progress
-        await processing_msg.edit_text("Found similar t-shirts! Sending recommendations...")
+        await processing_msg.edit_text(f"Found similar {item_type.lower()}! Sending recommendations...")
         
         # Send results
-        await update.message.reply_text(f"Here are {len(similar_tshirts)} t-shirts similar to yours:")
+        await update.message.reply_text(f"Here are {len(similar_items)} {item_type.lower()} similar to yours:")
         
         # Send each recommendation with similarity score
-        for i, (tshirt_path, distance) in enumerate(similar_tshirts):
+        for i, (item_path, distance) in enumerate(similar_items):
             # Skip if file doesn't exist
-            if not os.path.exists(tshirt_path):
-                print(f"Warning: File not found: {tshirt_path}")
+            if not os.path.exists(item_path):
+                print(f"Warning: File not found: {item_path}")
                 continue
                 
             try:
                 # Get filename for caption
-                filename = os.path.basename(tshirt_path)
+                filename = os.path.basename(item_path)
                 
                 # Calculate similarity score (inverse of distance, normalized to 0-100%)
                 # Lower distance = higher similarity
@@ -303,7 +391,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 caption = f"#{i+1}: {filename}\nSimilarity: {similarity:.1f}%"
                 
                 # Send the image
-                with open(tshirt_path, 'rb') as img_file:
+                with open(item_path, 'rb') as img_file:
                     await context.bot.send_photo(
                         chat_id=update.effective_chat.id,
                         photo=img_file,
@@ -313,8 +401,16 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 print(f"Error sending recommendation {i+1}: {str(img_e)}")
                 await update.message.reply_text(f"Couldn't load recommendation #{i+1}: {filename}")
         
-        # Final message
-        await update.message.reply_text("That's all! Send another T-shirt photo for more recommendations.")
+        # Final message with option to try another category
+        keyboard = [
+            [KeyboardButton("T-shirts 👕"), KeyboardButton("Shoes 👟")]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+        
+        await update.message.reply_text(
+            f"That's all! Send another {item_type.lower()} photo for more recommendations, or switch categories.",
+            reply_markup=reply_markup
+        )
         
     except Exception as e:
         logger.error(f"Error processing photo: {str(e)}", exc_info=True)
@@ -324,9 +420,22 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle text messages."""
-    await update.message.reply_text(
-        "Please send me a photo of a T-shirt you like, and I'll recommend similar ones!"
-    )
+    text = update.message.text
+    
+    # Check if it's a category selection
+    if text in ["T-shirts 👕", "Shoes 👟"]:
+        await handle_category_selection(update, context)
+    else:
+        # Create a keyboard with category selection
+        keyboard = [
+            [KeyboardButton("T-shirts 👕"), KeyboardButton("Shoes 👟")]
+        ]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        
+        await update.message.reply_text(
+            "Please select a category and send a photo of the item you like:", 
+            reply_markup=reply_markup
+        )
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log errors caused by updates."""
@@ -343,20 +452,32 @@ def main() -> None:
     # Create the Application
     application = Application.builder().token("7978191456:AAGk5l4tbNWV1P52qPCks2xpwykODsjn3DI").build()
     
-    # Load data and models
-    print("Initializing bot...")
-    embeddings_df, embedding_cols = load_embeddings()
-    model, kmeans = load_models()
+    # Load data and models for T-shirts
+    print("Loading T-shirt models and data...")
+    tshirt_embeddings_df, tshirt_embedding_cols = load_embeddings(TSHIRT_EMBEDDINGS_PATH)
+    tshirt_model, tshirt_kmeans = load_models(TSHIRT_MODEL_PATH, TSHIRT_KMEANS_PATH)
+    
+    # Load data and models for Shoes
+    print("Loading Shoes models and data...")
+    shoes_embeddings_df, shoes_embedding_cols = load_embeddings(SHOES_EMBEDDINGS_PATH)
+    shoes_model, shoes_kmeans = load_models(SHOES_MODEL_PATH, SHOES_KMEANS_PATH)
     
     # Store loaded data in application context
-    application.bot_data['embeddings_df'] = embeddings_df
-    application.bot_data['embedding_cols'] = embedding_cols
-    application.bot_data['model'] = model
-    application.bot_data['kmeans'] = kmeans
+    application.bot_data['tshirt_embeddings_df'] = tshirt_embeddings_df
+    application.bot_data['tshirt_embedding_cols'] = tshirt_embedding_cols
+    application.bot_data['tshirt_model'] = tshirt_model
+    application.bot_data['tshirt_kmeans'] = tshirt_kmeans
+    
+    application.bot_data['shoes_embeddings_df'] = shoes_embeddings_df
+    application.bot_data['shoes_embedding_cols'] = shoes_embedding_cols
+    application.bot_data['shoes_model'] = shoes_model
+    application.bot_data['shoes_kmeans'] = shoes_kmeans
     
     # Add command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("tshirts", set_tshirts_mode))
+    application.add_handler(CommandHandler("shoes", set_shoes_mode))
     
     # Add photo handler
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
