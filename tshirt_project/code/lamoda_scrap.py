@@ -183,7 +183,7 @@ def save_to_csv(products, filename="lamoda_products.csv"):
 def main():
     """Main function to run the scraper."""
     # Configuration variables
-    url = "https://www.lamoda.kz/c/2508/clothes-tolstovki-i-olimpiyki/"
+    url = "https://www.lamoda.kz/c/517/clothes-muzhskie-bryuki/"
     num_pages = 100  # Set the number of pages to scrape directly in the script
     
     print(f"Starting to scrape {num_pages} page(s) from Lamoda...")
