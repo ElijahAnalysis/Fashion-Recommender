@@ -17,9 +17,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global variables for T-shirts
-TSHIRT_EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\efficientnetb0_fashion_embedings_df.csv.gz"
-TSHIRT_MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion.keras"
-TSHIRT_KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\efficientnetb0_fashion_kmeans41.joblib"
+TSHIRT_EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\tshirt_embedings_autoencooder_df.csv.gz"
+
+TSHIRT_MODEL_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\fashion_conv_encoder_gap.keras"
+
+TSHIRT_KMEANS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\models\tshirt_kmeans45.joblib"
 
 # Global variables for Shoes
 SHOES_EMBEDDINGS_PATH = r"C:\Users\User\Desktop\DATA SCIENCE\Github\Fashion-Recommender\tshirt_project\data\shoes_embedings_df.csv.gz"
