@@ -1,0 +1,30 @@
+2025-08-23 23:04:28,479 - INFO - Starting URL 1/6: clothes_zhenskaya_odezhda
+2025-08-23 23:04:28,481 - INFO - Starting scraping: https://www.lamoda.kz/c/355/clothes-zhenskaya-odezhda/ (max: 2000 items, 500 pages)
+2025-08-23 23:04:28,481 - INFO - Scraping page 1: https://www.lamoda.kz/c/355/clothes-zhenskaya-odezhda/?page=1
+2025-08-23 23:04:31,897 - INFO - Found 60 products using selector: div.x-product-card__card
+2025-08-23 23:04:31,950 - INFO - Downloaded: Лонгслив_1.jpg
+2025-08-23 23:04:32,829 - INFO - Downloaded: Рубашка_2.jpg
+2025-08-23 23:04:33,995 - INFO - Downloaded: Олимпийка_3.jpg
+2025-08-23 23:04:35,283 - INFO - Downloaded: Джинсы Balloon fit_4.jpg
+2025-08-23 23:04:36,449 - INFO - Downloaded: Юбка Lamoda Online Exclusive_5.jpg
+2025-08-23 23:04:36,978 - INFO - Downloaded: Юбка_6.jpg
+2025-08-23 23:04:38,011 - INFO - Downloaded: Платье Lamoda Online Exclusive_7.jpg
+2025-08-23 23:04:38,592 - INFO - Downloaded: Брюки спортивные_8.jpg
+2025-08-23 23:04:39,742 - INFO - Downloaded: Лонгслив_9.jpg
+2025-08-23 23:04:40,987 - INFO - Downloaded: Юбка Lamoda Online Exclusive_10.jpg
+2025-08-23 23:04:41,686 - INFO - Downloaded: Брюки LamodaOnlineExclusive_11.jpg
+2025-08-23 23:04:42,574 - INFO - Downloaded: Шорты спортивные_12.jpg
+2025-08-23 23:04:44,050 - INFO - Page 1: Downloaded 12 images (Total: 12/2000)
+2025-08-23 23:04:44,050 - INFO - Scraping page 2: https://www.lamoda.kz/c/355/clothes-zhenskaya-odezhda/?page=2
+2025-08-23 23:04:47,731 - INFO - Found 60 products using selector: div.x-product-card__card
+2025-08-23 23:04:47,731 - INFO - Downloaded: Костюм спортивный_13.jpg
+2025-08-23 23:04:48,877 - INFO - Downloaded: Платье_14.jpg
+2025-08-23 23:04:50,295 - INFO - Downloaded: Куртка утепленная_15.jpg
+2025-08-23 23:04:51,141 - INFO - Downloaded: Трусы 5 шт._16.jpg
+2025-08-23 23:04:51,928 - INFO - Downloaded: Блуза_17.jpg
+2025-08-23 23:04:52,711 - INFO - Downloaded: Купальник_18.jpg
+2025-08-23 23:04:53,256 - INFO - Downloaded: Платье_19.jpg
+2025-08-23 23:04:54,482 - INFO - Downloaded: Топ спортивный_20.jpg
+2025-08-23 23:04:55,460 - INFO - Downloaded: Юбка_21.jpg
+2025-08-23 23:04:56,476 - INFO - Downloaded: Купальник_22.jpg
+2025-08-23 23:04:57,252 - INFO - Downloaded: Брюки_23.jpg

@@ -8,73 +8,71 @@ import base64
 
 # Configure the page
 st.set_page_config(
-    page_title="CLIP + Gemma Fashion Engine",
-    page_icon="■",
+    page_title="OpenAI CLIP + Gemma Fashion Engine",
+    page_icon="🔷",
     layout="wide"
 )
 
-# Minimalist CSS
+# Simple CSS
 st.markdown("""
 <style>
-    .main-header {
-        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-        font-weight: 300;
-        color: #1a1a1a;
+    .main-title {
+        font-size: 32px;
+        font-weight: 600;
         text-align: center;
-        margin-bottom: 40px;
-        font-size: 28px;
+        margin-bottom: 30px;
+        color: #1f1f1f;
     }
     
-    .user-message {
-        background-color: #000;
+    .openai-text {
         color: white;
-        padding: 12px 16px;
+        background-color: #000000;
+        padding: 4px 8px;
         border-radius: 4px;
-        margin: 8px 0;
-        text-align: right;
-        max-width: 60%;
+    }
+    
+    .gemma-text {
+        color: #6366f1;
+        background-color: #000000;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    
+    .plus-sign {
+        color: #10b981;
+        font-weight: 700;
+    }
+    
+    .chat-message {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        max-width: 80%;
+    }
+    
+    .user-msg {
+        background-color: #e3f2fd;
         margin-left: auto;
-        font-family: monospace;
-        font-size: 14px;
+        text-align: right;
+        color: #1565c0;
     }
     
-    .bot-message {
-        background-color: #f8f9fa;
-        color: #2c3e50;
-        padding: 12px 16px;
-        border-radius: 4px;
-        margin: 8px 0;
-        max-width: 60%;
-        border-left: 3px solid #000;
-        font-family: monospace;
-        font-size: 14px;
-    }
-    
-    .fashion-items {
+    .assistant-msg {
         background-color: #ffffff;
         border: 1px solid #e0e0e0;
-        padding: 20px;
-        margin: 16px 0;
-        font-family: monospace;
+        margin-right: auto;
     }
     
-    .tech-info {
-        font-family: monospace;
-        font-size: 12px;
-        color: #666;
-        text-align: center;
-        margin: 40px 0;
+    .outfit-items {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 10px 0;
     }
     
-    .stApp > header {
-        background-color: transparent;
-    }
-    
-    .sidebar-header {
-        font-family: monospace;
-        font-weight: 600;
-        color: #2c3e50;
-        font-size: 14px;
+    .stButton > button {
+        width: 100%;
+        margin: 2px 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -87,7 +85,7 @@ if 'api_url' not in st.session_state:
     st.session_state.api_url = "http://127.0.0.1:4321"
 
 def call_fashion_api(text, api_url):
-    """Call the fashion API with the user's text"""
+    """Call the fashion API"""
     try:
         response = requests.post(
             f"{api_url}/make_look",
@@ -97,163 +95,151 @@ def call_fashion_api(text, api_url):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"API returned status code {response.status_code}"}
-    except requests.exceptions.RequestException as e:
-        return {"error": f"Failed to connect to API: {str(e)}"}
+            return {"error": f"API error: {response.status_code}"}
+    except Exception as e:
+        return {"error": f"Connection failed: {str(e)}"}
 
 def display_image_safely(image_path):
-    """Display image with error handling"""
+    """Display image safely"""
     try:
         if os.path.exists(image_path):
-            image = Image.open(image_path)
-            return image
+            return Image.open(image_path)
         else:
-            placeholder = Image.new('RGB', (200, 200), color='#f0f0f0')
-            return placeholder
-    except Exception as e:
-        placeholder = Image.new('RGB', (200, 200), color='#e0e0e0')
-        return placeholder
+            return Image.new('RGB', (200, 200), color='#cccccc')
+    except:
+        return Image.new('RGB', (200, 200), color='#cccccc')
 
-def display_chat_message(role, content, items=None, image_paths=None):
-    """Display a chat message with minimal styling"""
-    if role == "user":
-        st.markdown(f'<div class="user-message">> {content}</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div class="bot-message">SYSTEM: OUTFIT GENERATED</div>', unsafe_allow_html=True)
-        
-        if items:
-            st.markdown('<div class="fashion-items">', unsafe_allow_html=True)
-            st.markdown("**OUTPUT:**")
-            for i, item in enumerate(items, 1):
-                st.markdown(f"{i:02d}. {item}")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        if image_paths:
-            st.markdown("**VISUAL REFERENCES:**")
-            cols = st.columns(min(len(image_paths), 4))
-            
-            for idx, image_path in enumerate(image_paths):
-                with cols[idx % 4]:
-                    image = display_image_safely(image_path)
-                    st.image(image, caption=f"REF_{idx+1:02d}", use_column_width=True)
+# Header
+st.markdown('''
+<h1 class="main-title">
+    <span class="openai-text">OpenAI CLIP</span> 
+    <span class="plus-sign">+</span> 
+    <span class="gemma-text">Gemma</span> 
+    Fashion Engine
+</h1>
+''', unsafe_allow_html=True)
 
-# Main UI
-st.markdown('<h1 class="main-header">CLIP + GEMMA FASHION ENGINE</h1>', unsafe_allow_html=True)
+# Layout
+col1, col2 = st.columns([1, 3])
 
 # Sidebar
-with st.sidebar:
-    st.markdown('<div class="sidebar-header">CONFIG</div>', unsafe_allow_html=True)
-    api_url = st.text_input("API_ENDPOINT", value=st.session_state.api_url)
+with col1:
+    st.header("Settings")
+    
+    # API URL
+    api_url = st.text_input("API URL", value=st.session_state.api_url)
     st.session_state.api_url = api_url
     
-    st.markdown("---")
-    st.markdown('<div class="sidebar-header">PRESETS</div>', unsafe_allow_html=True)
+    st.header("Quick Presets")
     
     presets = [
-        "total black winter",
-        "minimal summer casual", 
-        "monochrome gym wear",
-        "dark business formal",
-        "grey streetwear",
-        "all white minimal"
+        "minimal black outfit",
+        "business casual",
+        "summer casual",
+        "winter layers",
+        "gym wear",
+        "date night",
+        "office formal",
+        "weekend comfort"
     ]
     
     for preset in presets:
-        if st.button(preset, key=f"preset_{preset}"):
+        if st.button(preset):
             st.session_state.chat_history.append({
-                "role": "user", 
+                "role": "user",
                 "content": preset
             })
             
-            with st.spinner("PROCESSING..."):
+            with st.spinner("Generating..."):
                 result = call_fashion_api(preset, st.session_state.api_url)
             
             if "error" not in result:
                 st.session_state.chat_history.append({
                     "role": "assistant",
-                    "content": "OUTFIT GENERATED",
+                    "content": "Generated outfit",
                     "items": result.get("items", []),
                     "image_paths": result.get("image_paths", [])
                 })
+            else:
+                st.error(result["error"])
             
             st.rerun()
-
-    st.markdown("---")
-    if st.button("CLEAR_HISTORY"):
+    
+    st.divider()
+    
+    if st.button("Clear Chat"):
         st.session_state.chat_history = []
         st.rerun()
 
-# Chat interface
-st.markdown("### FASHION_INPUT")
-
-# Display chat history
-chat_container = st.container()
-with chat_container:
-    for message in st.session_state.chat_history:
-        display_chat_message(
-            message["role"], 
-            message["content"],
-            message.get("items"),
-            message.get("image_paths")
+# Main chat area
+with col2:
+    st.header("Chat")
+    
+    # Chat container
+    chat_container = st.container()
+    
+    with chat_container:
+        if len(st.session_state.chat_history) == 0:
+            st.info("Start by typing a message or selecting a preset from the sidebar.")
+        else:
+            for message in st.session_state.chat_history:
+                if message["role"] == "user":
+                    st.markdown(f'<div class="chat-message user-msg">{message["content"]}</div>', 
+                              unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="chat-message assistant-msg">Generated outfit successfully</div>', 
+                              unsafe_allow_html=True)
+                    
+                    # Show images only
+                    if message.get("image_paths"):
+                        st.write("**Reference Images:**")
+                        
+                        # Create columns for images
+                        num_images = len(message["image_paths"])
+                        if num_images > 0:
+                            cols = st.columns(min(num_images, 4))
+                            
+                            for idx, image_path in enumerate(message["image_paths"]):
+                                with cols[idx % 4]:
+                                    image = display_image_safely(image_path)
+                                    st.image(image, caption=f"Ref {idx+1}", use_column_width=True)
+    
+    st.divider()
+    
+    # Input area
+    with st.form("chat_form", clear_on_submit=True):
+        user_input = st.text_area(
+            "Your message:",
+            placeholder="Describe the style you want...",
+            height=100
         )
-
-# Input form
-with st.form("fashion_input", clear_on_submit=True):
-    user_input = st.text_input(
-        "",
-        placeholder="describe target aesthetic..."
-    )
+        
+        submitted = st.form_submit_button("Generate Outfit")
     
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        send_button = st.form_submit_button("GENERATE", type="primary", use_container_width=True)
-
-# Handle input
-if send_button and user_input.strip():
-    st.session_state.chat_history.append({
-        "role": "user",
-        "content": user_input
-    })
-    
-    with st.spinner("PROCESSING..."):
-        result = call_fashion_api(user_input, st.session_state.api_url)
-    
-    if "error" in result:
-        st.error(f"ERROR: {result['error']}")
-        st.info("VERIFY API CONNECTION")
-    else:
+    if submitted and user_input.strip():
+        # Add user message
         st.session_state.chat_history.append({
-            "role": "assistant",
-            "content": "OUTFIT GENERATED",
-            "items": result.get("items", []),
-            "image_paths": result.get("image_paths", [])
+            "role": "user",
+            "content": user_input.strip()
         })
-    
-    st.rerun()
+        
+        # Call API
+        with st.spinner("Generating outfit..."):
+            result = call_fashion_api(user_input.strip(), st.session_state.api_url)
+        
+        if "error" in result:
+            st.error(result["error"])
+        else:
+            # Add assistant response
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": "Generated outfit",
+                "items": result.get("items", []),
+                "image_paths": result.get("image_paths", [])
+            })
+        
+        st.rerun()
 
 # Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div class="tech-info">
-        CLIP VISUAL ENCODER | GEMMA LLM | STREAMLIT INTERFACE<br>
-        NEURAL FASHION SYNTHESIS v1.0
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
-
-# System info for first-time users
-if len(st.session_state.chat_history) == 0:
-    st.info("""
-    **SYSTEM_STATUS: READY**
-    
-    Input fashion requirements for AI-generated outfit recommendations.
-    
-    SUPPORTED_QUERIES:
-    - Color themes: "total black", "monochrome grey"
-    - Seasonal: "winter minimal", "summer technical"
-    - Context: "gym functional", "office formal"
-    
-    Select presets from sidebar or input custom parameters.
-    """, icon="ℹ️")
+st.divider()
+st.write("**System:** OpenAI CLIP + Gemma LLM + Streamlit Interface")
