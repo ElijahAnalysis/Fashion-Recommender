@@ -94,45 +94,65 @@ def process_gemma_output(outputs):
 @app.post("/make_look")
 async def make_look(request: UserLookRequest):
     
+    
     messages = [
         {
-            "role": "user",
+            "role": "system",
             "content": (
-                "You are a helpful fashion assistant specializing in men's clothing. "
-                "Your job is to return exactly a valid Python list of 4 items, nothing else. "
-                "Each item must be a short fashion item name (like 'black hoodie with print' or 'white t-shirt with stripes'). "
-                
-                "ALLOWED CATEGORIES (choose exactly ONE item from each): "
-                "1. BOTTOMS: pants, trousers, jeans, chinos, shorts, joggers "
-                "2. TOPS: t-shirts, polo shirts "
-                "3. OUTER LAYERS: hoodies, sweatshirts, zip-hoodies, cardigans, jackets "
-                "4. SHOES: sneakers, loafers, boots, dress shoes, canvas shoes, running shoes, casual shoes "
-                
-                "FORBIDDEN ITEMS: You must NOT suggest accessories (caps, hats, glasses, watches, belts, bags, jewelry), "
-                "cosmetics, underwear, or any items not listed in the allowed categories above. "
-                
+                "You are a strict fashion assistant specializing in **men's and women's clothing**. "
+                "You must ALWAYS respect the user's requested gender and colors/themes. "
+                "Your only output must be **exactly one valid Python list**, with no text, no formatting, no explanations. "
+                ""
                 "STRICT RULES: "
-                "1. You must suggest exactly ONE item from each of the 4 categories above. "
-                "2. If the user specifies a color theme (like 'total black', 'total white', 'all grey'), "
-                "   then ALL 4 items MUST match that color theme. "
-                "3. Always specify the exact type of shoe (e.g., 'white sneakers', 'brown loafers', 'black boots'). "
-                "4. Do NOT include any explanation, extra text, quotes, or formatting outside the list. "
-                
-                "SEASONAL ADJUSTMENTS: "
-                "- For WARM weather (summer, hot day, beach, sunny walk): Choose lighter outer layers like "
-                "  light jackets, thin cardigans, or lightweight zip-hoodies. Prefer shorts over pants when appropriate. "
-                "- For COLD weather (winter, cold library, windy night): Choose warmer outer layers like "
-                "  thick hoodies, heavy sweatshirts, or warm jackets. Always include pants/trousers, not shorts. "
-                
-                "OUTPUT FORMAT: Return exactly 4 items in this order: [bottom, top, outer layer, shoes] "
-                
-                "Example (total black winter): ['black pants', 'black t-shirt', 'black hoodie', 'black sneakers'] "
-                "Example (summer casual): ['beige shorts', 'white polo shirt', 'light blue zip-hoodie', 'white canvas shoes'] "
-                
-                f"Now create a fashion list for: {request.text}"
+                "1. The list must contain **minimum 3 and maximum 6 items**. If you cannot meet this, output nothing. "
+                "2. Each item must be a **single clothing or accessory description**. "
+                "3. Each description must include **specific details** (colors, fabrics, styles). "
+                "4. Each item must belong to **different categories** (bottoms, tops, outer layers, shoes, optional accessories). "
+                "   - Only ONE item per category. "
+                "5. If the user specifies a gender, you MUST return clothing appropriate for that gender. "
+                "6. You must include the gender in every item description, in the format: 'men ...' or 'women ...'. "
+                "7. If the user specifies a color or theme, ALL items must strictly follow it. NO EXCEPTIONS. "
+                "   - 'total black' means EVERY item must be black. "
+                "   - 'all white' means EVERY item must be white. "
+                "   - 'monochrome blue' means EVERY item must be blue. "
+                "8. You must NEVER output fewer than 3 or more than 6 items. "
+                "9. Use only plain strings inside the Python list. "
+                "10. NEVER repeat categories - one bottom, one top, one outer layer, one shoe maximum. "
+                ""
+                "ALLOWED CATEGORIES: "
+                "- BOTTOMS: pants, trousers, jeans, chinos, shorts, joggers, skirts, dresses "
+                "- TOPS: t-shirts, polo shirts, blouses, crop tops, shirts "
+                "- OUTER LAYERS: hoodies, sweatshirts, zip-hoodies, cardigans, jackets, coats "
+                "- SHOES: sneakers, loafers, boots, dress shoes, canvas shoes, running shoes, casual shoes, heels, sandals "
+                "- ACCESSORIES (optional, max 2): hats, caps, glasses, watches, belts, bags, jewelry, scarves "
+                ""
+                "SEASONAL RULES: "
+                "- WARM weather: lighter fabrics, breathable pieces, skirts, dresses, crop tops, sandals. "
+                "- COLD weather: thick fabrics, warm outer layers, boots, scarves, cozy accessories. "
+                ""
+                "CRITICAL COLOR ENFORCEMENT: "
+                "When user specifies a color theme, you must check each item contains that exact color. "
+                "Examples of CORRECT responses: "
+                "- 'total black for men' → ['men black cotton t-shirt', 'men black denim jeans', 'men black leather boots', 'men black bomber jacket'] "
+                "- 'all white for women' → ['women white cotton blouse', 'women white linen pants', 'women white canvas sneakers'] "
+                ""
+                "Examples of WRONG responses (DO NOT DO): "
+                "- 'total black for men' → ['men black shirt', 'men beige chinos', 'men white sneakers'] (violates color rule) "
+                "- Any response with repeated categories like jeans AND chinos (both bottoms) "
+                ""
+                "OUTPUT FORMAT: "
+                "Return ONLY a valid Python list (e.g., ['men black linen shirt', 'men black chinos', 'men black sneakers']). "
+                "NO explanations, NO text before or after, NO code blocks, NO markdown formatting. "
             )
+        },
+        {
+            "role": "user",
+            "content": f"{request.text}"
         }
     ]
+    
+
+
 
     inputs = tokenizer.apply_chat_template(
         messages,
@@ -146,6 +166,9 @@ async def make_look(request: UserLookRequest):
         outputs = gemma_1b.generate(**inputs, max_new_tokens=64)
 
     outputs = tokenizer.batch_decode(outputs)
+
+    print(">>> USER MESSAGE:", request.text)
+    print(">>> GEMMA RAW OUTPUT:", outputs[0])
     
     top_image_paths = process_gemma_output(outputs)
     
@@ -156,5 +179,9 @@ async def make_look(request: UserLookRequest):
     
     
 
+
+
+
+    
 
 
