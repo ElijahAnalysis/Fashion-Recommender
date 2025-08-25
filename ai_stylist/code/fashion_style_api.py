@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import ast
 
-from transformers import AutoTokenizer, BitsAndBytesConfig, Gemma2ForCausalLM
+from transformers import AutoTokenizer, BitsAndBytesConfig, Gemma3ForCausalLM
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -20,22 +20,19 @@ app = FastAPI()
 # Force CPU usage
 torch.set_default_tensor_type('torch.FloatTensor')
 
-#### GEMMA SETUP - CPU only
-quantization_config = BitsAndBytesConfig(
-    load_in_8bit=True,
-    llm_int8_enable_fp32_cpu_offload=True
-)
-
-gemma_1b = Gemma2ForCausalLM.from_pretrained(
-    "google/gemma-2-2b-it", 
-    quantization_config=quantization_config,
-    device_map="cpu",
-    torch_dtype=torch.float32
+#### GEMMA SETUP
+# Load model on CPU only (no quantization)
+gemma_1b = Gemma3ForCausalLM.from_pretrained(
+    "google/gemma-3-1b-it",
+    device_map="cpu"   # ensures CPU only
 ).eval()
 
-tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-2b-it")
+# Load tokenizer
+tokenizer = AutoTokenizer.from_pretrained("google/gemma-3-1b-it")
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
+
+
 
 #### CLIP SETUP - CPU only
 clip_model_id = "openai/clip-vit-base-patch32"
@@ -47,6 +44,13 @@ clip_processor = CLIPProcessor.from_pretrained(clip_model_id, use_fast=True)
 clip_image_data = torch.load(r"C:\Users\User\Downloads\clip_image_embeddings.pt", map_location='cpu')
 clip_image_embeddings = clip_image_data['image_embeddings'].to('cpu')
 image_paths = clip_image_data['image_paths']
+
+
+class UserLookRequest(BaseModel):
+
+    text : str
+
+
 
 #### FUNCTIONS
 def process_gemma_output(outputs):
@@ -85,12 +89,10 @@ def process_gemma_output(outputs):
 
     return top_image_paths
 
-#### API FUNCTIONALITY
-class request(BaseModel):
-    text: str
+
 
 @app.post("/make_look")
-async def make_look(request: request):
+async def make_look(request: UserLookRequest):
     
     messages = [
         {
@@ -151,11 +153,8 @@ async def make_look(request: request):
         "items": ast.literal_eval(outputs[0].split("<start_of_turn>model\n")[1].split("<end_of_turn>")[0].strip()),
         "image_paths": top_image_paths
     }
-
-
-
-
-
+    
+    
 
 
 
