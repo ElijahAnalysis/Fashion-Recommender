@@ -1,6 +1,6 @@
 # Gemma, OpenAI CLIP and Autoencoders for fashion!
 #### With Gemma3 and OpenAI CLIP you can make outfit with text request, describe your style and recieve items that are just good for it
-#### Autoencoder allow find most similar items that you liked
+#### With Autoencoder you can find most similar items to those you liked
 
 Here are some previews:
 
