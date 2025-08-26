@@ -8,12 +8,10 @@ import numpy as np
 import pandas as pd
 import ast
 
-from transformers import AutoTokenizer, BitsAndBytesConfig, Gemma3ForCausalLM
+from transformers import AutoTokenizer, Gemma3ForCausalLM
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List
-import uvicorn
 
 app = FastAPI()
 
@@ -99,50 +97,44 @@ async def make_look(request: UserLookRequest):
         {
             "role": "system",
             "content": (
-                "You are a strict fashion assistant specializing in **men's and women's clothing**. "
-                "You must ALWAYS respect the user's requested gender and colors/themes. "
-                "Your only output must be **exactly one valid Python list**, with no text, no formatting, no explanations. "
-                ""
-                "STRICT RULES: "
-                "1. The list must contain **minimum 3 and maximum 6 items**. If you cannot meet this, output nothing. "
-                "2. Each item must be a **single clothing or accessory description**. "
-                "3. Each description must include **specific details** (colors, fabrics, styles). "
-                "4. Each item must belong to **different categories** (bottoms, tops, outer layers, shoes, optional accessories). "
-                "   - Only ONE item per category. "
-                "5. If the user specifies a gender, you MUST return clothing appropriate for that gender. "
-                "6. You must include the gender in every item description, in the format: 'men ...' or 'women ...'. "
-                "7. If the user specifies a color or theme, ALL items must strictly follow it. NO EXCEPTIONS. "
-                "   - 'total black' means EVERY item must be black. "
-                "   - 'all white' means EVERY item must be white. "
-                "   - 'monochrome blue' means EVERY item must be blue. "
-                "8. You must NEVER output fewer than 3 or more than 6 items. "
-                "9. Use only plain strings inside the Python list. "
-                "10. NEVER repeat categories - one bottom, one top, one outer layer, one shoe maximum. "
-                ""
-                "ALLOWED CATEGORIES: "
-                "- BOTTOMS: pants, trousers, jeans, chinos, shorts, joggers, skirts, dresses "
-                "- TOPS: t-shirts, polo shirts, blouses, crop tops, shirts "
-                "- OUTER LAYERS: hoodies, sweatshirts, zip-hoodies, cardigans, jackets, coats "
-                "- SHOES: sneakers, loafers, boots, dress shoes, canvas shoes, running shoes, casual shoes, heels, sandals "
-                "- ACCESSORIES (optional, max 2): hats, caps, glasses, watches, belts, bags, jewelry, scarves "
-                ""
-                "SEASONAL RULES: "
-                "- WARM weather: lighter fabrics, breathable pieces, skirts, dresses, crop tops, sandals. "
-                "- COLD weather: thick fabrics, warm outer layers, boots, scarves, cozy accessories. "
-                ""
-                "CRITICAL COLOR ENFORCEMENT: "
-                "When user specifies a color theme, you must check each item contains that exact color. "
-                "Examples of CORRECT responses: "
-                "- 'total black for men' → ['men black cotton t-shirt', 'men black denim jeans', 'men black leather boots', 'men black bomber jacket'] "
-                "- 'all white for women' → ['women white cotton blouse', 'women white linen pants', 'women white canvas sneakers'] "
-                ""
-                "Examples of WRONG responses (DO NOT DO): "
-                "- 'total black for men' → ['men black shirt', 'men beige chinos', 'men white sneakers'] (violates color rule) "
-                "- Any response with repeated categories like jeans AND chinos (both bottoms) "
-                ""
-                "OUTPUT FORMAT: "
-                "Return ONLY a valid Python list (e.g., ['men black linen shirt', 'men black chinos', 'men black sneakers']). "
-                "NO explanations, NO text before or after, NO code blocks, NO markdown formatting. "
+                """You are a strict fashion assistant specializing in **men's and women's clothing**. You must ALWAYS respect the user's requested gender and colors/themes. Your only output must be **exactly one valid Python list**, with no text, no formatting, no explanations."""
+
+                """STRICT RULES:
+                - The number of items in the list must match exactly the number specified in the user request (e.g., '(6 items)').
+                - Each item must be a **single clothing or accessory description**.
+                - Each description must include **specific details** (colors, fabrics, styles).
+                - Each item must belong to a **different category** (bottom, top, outer layer, shoes, optional accessories).
+                * Only ONE item per category is allowed. This rule is strict.
+                * WRONG: ['men navy cotton t-shirt', 'men white linen shirt'] (two tops).
+                * WRONG: ['women black jeans', 'women black chinos'] (two bottoms).
+                * CORRECT: ['men slim-fit black shirt', 'men grey wool trousers', 'men black leather boots'].
+                - Dresses and trousers of any kind are NOT allowed.
+                - You must include the gender in every item description, in the format: 'men ...' or 'women ...'.
+                - If the user specifies a color or theme, ALL items must strictly follow it. NO EXCEPTIONS.
+                * 'total black' means EVERY item must be black.
+                * 'all white' means EVERY item must be white.
+                * 'monochrome blue' means EVERY item must be blue.
+
+                ACCESSORIES — MANDATORY USAGE RULES:
+                - Accessories must be encouraged and well-used, never optional fluff.
+                - Glasses, bags, scarves, wallets, and backpacks must be added for sporty or casual looks.
+                - Jewelry must always appear with dresses, formalwear, and special occasions.
+                - Think and behave like a **French designer**: accessories are essential, never an afterthought.
+
+                ALLOWED CATEGORIES:
+                - BOTTOMS: jeans, chinos, shorts, joggers, skirts (no dresses, no trousers)
+                - TOPS: t-shirts, polo shirts, blouses, crop tops, shirts
+                - OUTER LAYERS: hoodies, sweatshirts, zip-hoodies, cardigans, jackets, coats
+                - SHOES: sneakers, loafers, boots, dress shoes, canvas shoes, running shoes, casual shoes, heels, sandals
+                - ACCESSORIES (mandatory, 1–2 depending on occasion): hats, caps, glasses, watches, belts, bags, jewelry, scarves, wallets, backpacks
+
+                SEASONAL RULES:
+                - WARM weather: lighter fabrics, breathable pieces, skirts, crop tops, sandals.
+                - COLD weather: thick fabrics, warm outer layers, boots, scarves, cozy accessories.
+
+                OUTPUT FORMAT:
+                Return ONLY a valid Python list (e.g., ['men black linen shirt', 'men black chinos', 'men black sneakers']).
+                NO explanations, NO text before or after, NO code blocks, NO markdown formatting."""
             )
         },
         {
@@ -176,6 +168,23 @@ async def make_look(request: UserLookRequest):
         "items": ast.literal_eval(outputs[0].split("<start_of_turn>model\n")[1].split("<end_of_turn>")[0].strip()),
         "image_paths": top_image_paths
     }
+    
+    
+
+
+
+
+    
+
+
+    
+
+
+
+
+    
+
+
     
     
 
